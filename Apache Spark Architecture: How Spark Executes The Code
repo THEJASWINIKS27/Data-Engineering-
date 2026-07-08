@@ -1,1 +1,174 @@
+Day 1 – Apache Spark Architecture: How Spark Executes The Code
+
+Introduction:
+Apache Spark is an open-source distributed data processing framework designed to process massive datasets efficiently across multiple machines. Unlike traditional data processing frameworks that rely heavily on disk operations, Spark performs most computations in memory, making it significantly faster for iterative algorithms, ETL pipelines, machine learning, and large-scale analytics.
+Understanding Spark Architecture is the foundation for learning performance tuning, debugging, and writing efficient Spark applications.
+
+Why Do We Need Apache Spark?
+Modern applications generate terabytes or even petabytes of data every day. Processing this data on a single machine is slow and unreliable.
+Apache Spark solves this problem by:
+* Distributing data across multiple machines
+* Processing data in parallel
+* Recovering automatically from failures
+* Supporting multiple programming languages (Scala, Python, Java, R)
+* Providing built-in libraries for SQL, Streaming, Machine Learning, and Graph Processing
+
+Apache Spark Architecture:
+                    +----------------------+
+                    |     Spark Driver     |
+                    |----------------------|
+                    | SparkSession         |
+                    | DAG Scheduler        |
+                    | Task Scheduler       |
+                    +----------+-----------+
+                               |
+                 Sends Tasks to Executors
+                               |
+        +----------------------+----------------------+
+        |                                             |
++-------------------+                     +-------------------+
+|    Executor 1     |                     |    Executor 2     |
+|-------------------|                     |-------------------|
+| Task 1            |                     | Task 3            |
+| Task 2            |                     | Task 4            |
+| Cache Data        |                     | Cache Data        |
++-------------------+                     +-------------------+
+        |                                             |
+        +----------------------+----------------------+
+                               |
+                     Distributed Storage
+               (HDFS, S3, GCS, Local Files)
+
+Main Components:
+
+1. Driver Program -
+The Driver Program is the brain of every Spark application.
+Responsibilities:
+* Creates the SparkSession
+* Converts user code into an execution plan
+* Creates the Directed Acyclic Graph (DAG)
+* Schedules jobs
+* Communicates with the Cluster Manager
+* Sends tasks to executors
+* Collects results
+
+Without the Driver, a Spark application cannot execute.
+
+2. Cluster Manager -
+The Cluster Manager is responsible for allocating computing resources.
+Supported Cluster Managers:
+* Standalone Cluster Manager
+* Hadoop YARN
+* Kubernetes
+* Apache Mesos
+
+Responsibilities:
+* Allocates CPU and memory
+* Launches executors
+* Monitors available resources
+
+3. Executors
+Executors are worker processes responsible for executing tasks.
+Responsibilities:
+* Execute tasks assigned by the Driver
+* Store cached data in memory
+* Return computation results
+* Handle shuffle operations
+
+Each executor runs independently on a worker node.
+
+4. Worker Nodes
+Worker nodes are the physical or virtual machines where executors run.
+A cluster may contain dozens or even thousands of worker nodes depending on the workload.
+
+Spark Execution Flow
+Suppose we execute the following code:
+
+scala
+val df = spark.read.csv("orders.csv")
+
+val result = df.filter($"amount" > 1000)
+               .groupBy("city")
+               .count()
+
+result.show()
+
+Execution steps:
+1. The Driver creates the SparkSession.
+2. Spark reads the source file metadata.
+3. `filter()` creates a transformation.
+4. `groupBy()` creates another transformation.
+5. No computation happens yet because transformations are lazy.
+6. `show()` is an action.
+7. Spark creates a DAG (Directed Acyclic Graph).
+8. The DAG is divided into stages.
+9. Stages are divided into tasks.
+10. Tasks are sent to executors.
+11. Executors process data in parallel.
+12. Results are returned to the Driver.
+13. The Driver displays the output.
+
+Important Spark Terminology:
+
+1.Job -
+A Job is created whenever an Action is executed.
+Examples of actions:
+* show()
+* count()
+* collect()
+* save()
+* first()
+
+One action = One Job
+
+2.Stage -
+A Job is divided into one or more Stages.
+A new stage is usually created when Spark encounters a shuffle operation such as:
+* groupBy()
+* join()
+* distinct()
+* repartition()
+
+3. Task -
+A Task is the smallest unit of work in Spark.
+Each partition of data is processed by one task.
+Example:
+100 partitions = 100 tasks
+
+4. Partition -
+A partition is a logical chunk of data processed independently.
+More partitions generally increase parallelism, but too many very small partitions can introduce overhead.
+
+Why Spark Is Fast -
+Spark achieves high performance because of:
+* In-memory computation
+* Parallel execution
+* DAG optimization
+* Lazy evaluation
+* Catalyst Optimizer
+* Tungsten execution engine
+* Efficient binary data format
+
+Common Interview Questions
+1. What is the role of the Driver in Spark?
+The Driver coordinates the entire application. It creates the execution plan, schedules jobs, sends tasks to executors, and collects results.
+
+2. What is an Executor?
+An Executor is a worker process that executes tasks, stores cached data, and sends results back to the Driver.
+
+3. What is a Task?
+A Task is the smallest unit of execution in Spark and processes one data partition.
+
+4. Why is Spark faster than Hadoop MapReduce?
+Spark performs most computations in memory and optimizes execution using DAGs, while Hadoop MapReduce writes intermediate results to disk between stages.
+
+5. What creates a new Job?
+Any Spark Action such as `count()`, `show()`, or `collect()` creates a new Job.
+
+Key Takeaways
+* The Driver controls the entire Spark application.
+* Executors perform computations on distributed data.
+* Tasks are executed in parallel across data partitions.
+* Jobs are created only when an Action is triggered.
+* Spark's in-memory processing and DAG-based execution make it highly efficient for large-scale data processing.
 
